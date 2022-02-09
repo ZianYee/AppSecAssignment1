@@ -193,7 +193,7 @@ namespace AppSecAssignment1
             string captchaResponse = Request.Form["g-recaptcha-response"];
 
             HttpWebRequest req = (HttpWebRequest)WebRequest.Create
-                ("https://www.google.com/recaptcha/api/siteverify?secret=6LesR2keAAAAAD_UXEw1q4u8cS11uiEiIZcQI_cA & response=" + captchaResponse);
+                ("https://www.google.com/recaptcha/api/siteverify?secret=SecretKey & response=" + captchaResponse);
 
             try
             {
