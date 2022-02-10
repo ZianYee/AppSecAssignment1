@@ -53,5 +53,10 @@ namespace AppSecAssignment1
             }
 
         }
+
+        protected void btn_chgpwd_click(object sender, EventArgs e)
+        {
+            Response.Redirect("ChangePassword.aspx");
+        }
     }
 }

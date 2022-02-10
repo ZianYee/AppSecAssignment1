@@ -14,6 +14,9 @@
             <br />
             <br />
             <asp:Button ID="btn_logout" runat="server" Text="Logout" OnClick ="btn_logout_click"/>
+            <br />
+            <br />
+            <asp:Button ID="btn_chgpwd" runat="server" Text="Change Password" OnClick ="btn_chgpwd_click"/>
 
         </div>
     </form>

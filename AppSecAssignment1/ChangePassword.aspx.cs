@@ -1,31 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
+using System.Data.SqlClient;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Web;
 using System.Web.UI;
 using System.Web.UI.WebControls;
-using System.Security.Cryptography;
-using System.Text;
-using System.Data;
-using System.Data.SqlClient;
-using System.Drawing;
-using System.Net;
-using System.IO;
-using System.Web.Script.Serialization;
-using System.Web.Services;
 
 namespace AppSecAssignment1
 {
-    public partial class Login : System.Web.UI.Page
+    public partial class ChangePassword : System.Web.UI.Page
     {
-        public class MyObject
-        {
-            public string success { get; set; }
-            public List<string> ErrorMessage { get; set; }
-
-        }
-
         string MYDBConnectionString = System.Configuration.ConfigurationManager.ConnectionStrings["MYDBConnection"].ConnectionString;
+        string str = null;
+        SqlCommand com;
+        byte up;
+        static string finalHash;
+        static string salt;
         byte[] Key;
         byte[] IV;
 
@@ -34,65 +27,66 @@ namespace AppSecAssignment1
 
         }
 
-        protected void btn_login_click(object sender, EventArgs e)
+        protected void btn_update_pwd_click(object sender, EventArgs e)
         {
-            // (ValidateCaptcha())
-            //{
-            string pwd = tb_pwd.Text.ToString().Trim();
-            string userid = tb_userid.Text.ToString().Trim();
-            SHA512Managed hashing = new SHA512Managed();
-            string dbHash = getDBHash(userid);
-            string dbSalt = getDBSalt(userid);  
+            SqlConnection connection = new SqlConnection(MYDBConnectionString);
+            connection.Open();
+            str = "select * from Account ";
+            com = new SqlCommand(str, connection);
+            string pwd = tb_npwd.Text.ToString().Trim(); ;
 
-            try
+            string pwdWithSalt = pwd + dbSalt;
+            byte[] hashWithSalt = hashing.ComputeHash(Encoding.UTF8.GetBytes(pwdWithSalt));
+            string userHash = Convert.ToBase64String(hashWithSalt);
+
+            SqlDataReader reader = com.ExecuteReader();
+            while (reader.Read())
             {
-                if (dbSalt != null && dbSalt.Length > 0 && dbHash != null && dbHash.Length > 0)
+                if (tb_cpwd.Text == reader["Password"].ToString())
                 {
-                    string pwdWithSalt = pwd + dbSalt;
-                    byte[] hashWithSalt = hashing.ComputeHash(Encoding.UTF8.GetBytes(pwdWithSalt));
-                    string userHash = Convert.ToBase64String(hashWithSalt);
-
-                    if (userHash.Equals(dbHash))
-                    {
-                        Session["LoggedIn"] = userid;
-
-                        // create a new GUID ans save into the session
-                        string guid = Guid.NewGuid().ToString();
-                        Session["AuthToken"] = guid;
-
-                        // now create a new cookie with this guid value
-                        Response.Cookies.Add(new HttpCookie("AuthToken", guid));
-
-                        Response.Redirect("HomePage.aspx", false);
-                    }
-
-                    else
-                    {
-                        lbl_errormsg.Text = "Userid or password is not valid. Please try again.";
-                        lbl_errormsg.ForeColor = Color.Red;
-
-                    }
+                    up = 1;
                 }
+                reader.Close();
+                connection.Close();
+                if (up == 1)
+                {
+                    
 
+                    //Generate random "salt"
+                    RNGCryptoServiceProvider rng = new RNGCryptoServiceProvider();
+                    byte[] saltByte = new byte[8];
+
+                    //Fills array of bytes with a cryptographically strong sequence of random values.
+                    rng.GetBytes(saltByte);
+                    salt = Convert.ToBase64String(saltByte);
+
+                    SHA512Managed hashing = new SHA512Managed();
+
+                    string pwdWithSalt = pwd + salt;
+                    byte[] plainHash = hashing.ComputeHash(Encoding.UTF8.GetBytes(pwd));
+                    byte[] hashWithSalt = hashing.ComputeHash(Encoding.UTF8.GetBytes(pwdWithSalt));
+
+                    finalHash = Convert.ToBase64String(hashWithSalt);
+
+                    RijndaelManaged cipher = new RijndaelManaged();
+                    cipher.GenerateKey();
+                    Key = cipher.Key;
+                    IV = cipher.IV;
+
+                    connection.Open();
+                    str = "update Account set Password=@Password where UserName='" + Session["UserName"].ToString() + "'";
+                    com = new SqlCommand(str, connection);
+                    com.Parameters.Add(new SqlParameter("@Password", SqlDbType.VarChar, 50));
+                    com.Parameters["@Password"].Value = tb_npwd.Text;
+                    com.ExecuteNonQuery();
+                    connection.Close();
+                    lbl_msg.Text = "Password changed Successfully";
+                }
                 else
                 {
-                    lbl_errormsg.Text = "Userid or password is not valid. Please try again.";
-                    lbl_errormsg.ForeColor = Color.Red;
+                    lbl_msg.Text = "Please enter correct Current password";
                 }
-
-
             }
-
-            catch (Exception ex)
-            {
-                throw new Exception(ex.ToString());
-            }
-            finally { }
-
-            //}
-            //else
-            //{
-            //    lbl_errormsg.Text = "failed captcha ";
         }
 
         protected string getDBHash(string userid)
@@ -113,7 +107,7 @@ namespace AppSecAssignment1
                         if (reader["PasswordHash"] != null)
                         {
 
-                        if (reader["PasswordHash"] != DBNull.Value)
+                            if (reader["PasswordHash"] != DBNull.Value)
                             {
                                 h = reader["PasswordHash"].ToString();
                             }
@@ -186,42 +180,7 @@ namespace AppSecAssignment1
             return cipherText;
         }
 
-        public bool ValidateCaptcha()
-        {
-            bool result = true;
 
-            string captchaResponse = Request.Form["g-recaptcha-response"];
-
-            HttpWebRequest req = (HttpWebRequest)WebRequest.Create
-                ("https://www.google.com/recaptcha/api/siteverify?secret=SecretKey & response=" + captchaResponse);
-
-            try
-            {
-                using(WebResponse wResponse = req.GetResponse())
-                {
-                    using(StreamReader readStream = new StreamReader(wResponse.GetResponseStream()))
-                    {
-                        string jsonResponse = readStream.ReadToEnd();
-
-                        //lbl_gScore.Text = jsonResponse.ToString();
-
-                        JavaScriptSerializer js = new JavaScriptSerializer();
-
-                        MyObject jsonObject = js.Deserialize<MyObject>(jsonResponse);
-
-                        result = Convert.ToBoolean(jsonObject.success);
-                    }
-                }
-
-                return result;
-            }
-            catch (WebException ex)
-            {
-                throw ex;
-            }
-        }
-
-        
 
 
 

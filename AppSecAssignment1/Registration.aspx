@@ -54,17 +54,35 @@
         <div style="width: 1337px">
 
             <p>First Name: <asp:TextBox ID="tb_fname" runat="server"></asp:TextBox> </p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator1" runat="server"   
+                ControlToValidate="tb_fname" ErrorMessage="Please enter First Name" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Last Name:<asp:TextBox ID="tb_lname" runat="server"></asp:TextBox></p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator2" runat="server"   
+                ControlToValidate="tb_lname" ErrorMessage="Please enter Last Name" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Credit Card Number:<asp:TextBox ID="tb_creditcard" runat="server" TextMode="Number"></asp:TextBox></p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator3" runat="server"   
+                ControlToValidate="tb_creditcard" ErrorMessage="Please enter Credit Card Number" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Email: <asp:TextBox ID="tb_email" runat="server" TextMode="Email"></asp:TextBox></p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator4" runat="server"   
+                ControlToValidate="tb_email" ErrorMessage="Please enter Email" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Password: <asp:TextBox ID="tb_pwd" runat="server" TextMode="Password" onkeyup="javascript:validate()"></asp:TextBox> (
             <asp:Label ID="lbl_pwdchecker" runat="server" Text="Password Checker"></asp:Label> ) </p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator5" runat="server"   
+                ControlToValidate="tb_pwd" ErrorMessage="Please enter Password" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Date of Birth: <asp:TextBox ID="tb_dob" runat="server" TextMode="Date"></asp:TextBox></p>
+            <asp:RequiredFieldValidator ID="RequiredFieldValidator6" runat="server"   
+                ControlToValidate="tb_dob" ErrorMessage="Please enter Date of Birth" ForeColor="Red">
+            </asp:RequiredFieldValidator> 
 
             <p>Photo: <asp:TextBox ID="tb_photo" runat="server"></asp:TextBox></p>
 
